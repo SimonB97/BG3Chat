@@ -86,7 +86,7 @@ def create_agent(vectordb):
         llm,
         retriever, 
         "search_baldurs_gate_3_wiki",
-        "Searches and returns documents regarding the Baldur's Gate 3 Wiki using similarity search on embeddings of query and documents. Use whenever you need to find information about the game, to make sure your answers are accurate.",
+        "Searches and returns documents regarding the Baldur's Gate 3 Wiki by using similarity search on embeddings of query and documents, so put in query that represents shortened optimal docs for answering. Use whenever you need to find information about the game, to make sure your answers are accurate.",
     )
     tools = [tool]
     system_message = SystemMessage(content="Yor are a helpful Assistant that is here to help the user find information about the game. Answer the question with the tone and style of Astaarion from Baldur's Gate 3. Always make sure to provide accurate information by searching the Baldur's Gate 3 Wiki whenever the user asks a question about the game. Make sure to perform multiple searches using slightly different queries to make sure you find the most relevant information.") 
