@@ -11,6 +11,8 @@ from langchain.schema import SystemMessage
 from langchain.agents.agent_toolkits import create_retriever_tool, create_conversational_retrieval_agent
 from langchain.schema import BaseRetriever
 from langchain.tools import Tool
+from langchain.memory import ConversationBufferMemory
+from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
 from openai.error import InvalidRequestError
 from bs4 import BeautifulSoup as Soup
 
@@ -27,9 +29,14 @@ url = 'https://baldursgate3.wiki.fextralife.com/'
 # turn url into indexname (remove special characters)
 indexname = re.sub('[^a-zA-Z0-9]', '_', url)
 
+msgs = StreamlitChatMessageHistory()
+memory = ConversationBufferMemory(memory_key="chat_history", chat_memory=msgs, return_messages=True)
+if len(msgs.messages) == 0:
+    msgs.add_ai_message("How can I help you?")
+
 # Page title
 st.set_page_config(page_title="🦜🔗 Baldur's Gate 3-Wiki Chatbot")
-st.title("🦜🔗 Baldur's Gate 3-Wiki Chatbot")
+st.sidebar.title("🦜🔗 Baldur's Gate 3-Wiki Chatbot")
 
 def scrape_url(url):
     print(f"Scraping {url}...")
@@ -90,7 +97,8 @@ def create_agent(vectordb):
     )
     tools = [tool]
     system_message = SystemMessage(content="Yor are a helpful Assistant that is here to help the user find information about the game. Answer the question with the tone and style of Astaarion from Baldur's Gate 3. Always make sure to provide accurate information by searching the Baldur's Gate 3 Wiki whenever the user asks a question about the game. Make sure to perform multiple searches using slightly different queries to make sure you find the most relevant information.") 
-    agent_executor = create_conversational_retrieval_agent(llm, tools, system_message=system_message)
+    agent_executor = create_conversational_retrieval_agent(llm, tools, system_message=system_message, remember_intermediate_steps=False)
+    agent_executor.memory = memory
     return agent_executor
 
 def generate_response(agent_executor, input_query):
@@ -127,15 +135,14 @@ def generate_response(agent_executor, input_query):
 st.sidebar.header("Chatbot Settings")
 openai_api_key = st.sidebar.text_input('OpenAI API Key', type='password')
 chain_type = st.sidebar.selectbox('Chain Type', ['stuff', 'refine'], disabled=not openai_api_key.startswith('sk-'))
+st.sidebar.info('stuff ⇒ faster, less accurate  \nrefine ⇒ slower, more accurate')
 model = st.sidebar.selectbox('Model', ['gpt-3.5-turbo', 'gpt-4'], disabled=not openai_api_key.startswith('sk-'))
-num_docs = st.sidebar.slider('Number of documents to search', 1, 50, 10)
-st.sidebar.info('The "stuff" chain type is faster but less accurate. The "refine" chain type is slower but more accurate.')
+num_docs = st.sidebar.slider('Number of documents retrieved per wiki search', 1, 50, 10)
 
 # App Logic
 if not openai_api_key.startswith('sk-'):
     st.warning('Please enter your OpenAI API key!', icon='⚠')
 if openai_api_key.startswith('sk-'):
-    st.sidebar.success('OpenAI API key entered!', icon='✅')
     placeholder = st.empty()
 
     # check if the scraped text file exists
@@ -167,9 +174,11 @@ if openai_api_key.startswith('sk-'):
         placeholder.empty()
 
     agent_executor = create_agent(vectordb)
+    for msg in msgs.messages:
+            st.chat_message(msg.type).write(msg.content)
 
     if query_text := st.chat_input():
-        st.chat_message("user").write(query_text)
+        st.chat_message("human").write(query_text)
         with st.chat_message("assistant"):
             st_callback = StreamlitCallbackHandler(st.container())
             generated_response = generate_response(agent_executor, query_text)
