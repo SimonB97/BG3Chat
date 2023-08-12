@@ -36,7 +36,7 @@ if len(msgs.messages) == 0:
 
 # Page title
 st.set_page_config(page_title="🦜🔗 Baldur's Gate 3-Wiki Chatbot")
-st.title("🦜🔗 Baldur's Gate 3-Wiki Chatbot")
+st.sidebar.title("🦜🔗 Baldur's Gate 3-Wiki Chatbot")
 
 def scrape_url(url):
     print(f"Scraping {url}...")
@@ -135,15 +135,14 @@ def generate_response(agent_executor, input_query):
 st.sidebar.header("Chatbot Settings")
 openai_api_key = st.sidebar.text_input('OpenAI API Key', type='password')
 chain_type = st.sidebar.selectbox('Chain Type', ['stuff', 'refine'], disabled=not openai_api_key.startswith('sk-'))
+st.sidebar.info('stuff ⇒ faster, less accurate  \nrefine ⇒ slower, more accurate')
 model = st.sidebar.selectbox('Model', ['gpt-3.5-turbo', 'gpt-4'], disabled=not openai_api_key.startswith('sk-'))
-num_docs = st.sidebar.slider('Number of documents to search', 1, 50, 10)
-st.sidebar.info('The "stuff" chain type is faster but less accurate. The "refine" chain type is slower but more accurate.')
+num_docs = st.sidebar.slider('Number of documents retrieved per wiki search', 1, 50, 10)
 
 # App Logic
 if not openai_api_key.startswith('sk-'):
     st.warning('Please enter your OpenAI API key!', icon='⚠')
 if openai_api_key.startswith('sk-'):
-    st.sidebar.success('OpenAI API key entered!', icon='✅')
     placeholder = st.empty()
 
     # check if the scraped text file exists
