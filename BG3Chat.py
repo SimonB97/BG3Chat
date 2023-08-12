@@ -7,7 +7,6 @@ from langchain.document_loaders.recursive_url_loader import RecursiveUrlLoader
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chat_models import ChatOpenAI
-from langchain.chains import RetrievalQA
 from langchain.schema import SystemMessage
 from langchain.agents.agent_toolkits import create_retriever_tool, create_conversational_retrieval_agent
 from langchain.schema import BaseRetriever
