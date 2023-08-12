@@ -175,10 +175,10 @@ if openai_api_key.startswith('sk-'):
         placeholder.empty()
 
     agent_executor = create_agent(vectordb)
+    for msg in msgs.messages:
+            st.chat_message(msg.type).write(msg.content)
 
     if query_text := st.chat_input():
-        for msg in msgs.messages:
-            st.chat_message(msg.type).write(msg.content)
         st.chat_message("human").write(query_text)
         with st.chat_message("assistant"):
             st_callback = StreamlitCallbackHandler(st.container())
