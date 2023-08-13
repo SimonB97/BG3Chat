@@ -111,7 +111,6 @@ def build_index(text):
     database.save_local(indexname)
     return database
 
-
 def create_retriever_tool(
     llm: ChatOpenAI, retriever: BaseRetriever, name: str, description: str
 ) -> Tool:
