@@ -25,16 +25,18 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import SystemMessage
-from langchain.agents.agent_toolkits import (
-    create_retriever_tool, create_conversational_retrieval_agent
-)
+from langchain.agents.agent_toolkits import create_conversational_retrieval_agent
 from langchain.schema import BaseRetriever
 from langchain.tools import Tool
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
+from langchain.prompts import PromptTemplate
+from langchain.chains.summarize import (
+    _load_stuff_chain, _load_map_reduce_chain, _load_refine_chain)
 from langsmith import Client
 from openai.error import InvalidRequestError
 from bs4 import BeautifulSoup as Soup
+import prompts
 
 # Langsmith (only for tracing)
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
@@ -89,7 +91,7 @@ def scrape_url(link):
     return cleaned_text
 
 
-def build_index(text):
+def build_index(scraped_text: str):
     """
     This function builds an index from the scraped text.
 
@@ -104,7 +106,7 @@ def build_index(text):
     # split text into chunks
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1200, chunk_overlap=120)
-    splits = text_splitter.split_text(text)
+    splits = text_splitter.split_text(scraped_text)
     # build index
     index_embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
     database = FAISS.from_texts(splits, index_embeddings)
@@ -114,30 +116,73 @@ def build_index(text):
 def create_retriever_tool(
     llm: ChatOpenAI, retriever: BaseRetriever, name: str, description: str
 ) -> Tool:
+    """
+    This function creates a tool for retrieving and combining documents.
+
+    Parameters:
+    llm (ChatOpenAI): The language model used for combining documents.
+    retriever (BaseRetriever): The retriever used to get relevant documents.
+    name (str): The name of the tool.
+    description (str): The description of the tool.
+
+    Returns:
+    Tool: The created tool for retrieving and combining documents.
+    """
+
+    if CHAIN_TYPE == "stuff":
+        summarize_chain = _load_stuff_chain(llm, verbose=True)
+    elif CHAIN_TYPE == "map-reduce":
+        # map_prompt_template = prompts.MAPREDUCE_PROMPT_TEMPLATE
+        # map_prompt = PromptTemplate.from_template(
+        #     template=map_prompt_template
+        # )
+        summarize_chain = _load_map_reduce_chain(
+            llm,
+            # map_prompt=map_prompt,
+            # combine_prompt=map_prompt,
+            verbose=True
+        )
+    elif CHAIN_TYPE == "refine":
+        question_prompt_template = prompts.QUESTION_PROMPT_TEMPLATE
+        question_prompt = PromptTemplate.from_template(
+            template=question_prompt_template
+        )
+        refine_prompt_template = prompts.REFINE_PROMPT_TEMPLATE
+        refine_prompt = PromptTemplate.from_template(
+            template=refine_prompt_template
+        )
+        summarize_chain = _load_refine_chain(llm, question_prompt, refine_prompt, verbose=True)
+    else:
+        raise ValueError(f"Unknown chain type {CHAIN_TYPE}")
 
     def retrieve_and_combine_documents(query):
-        pass
+        if CHAIN_TYPE == "stuff":
+            documents = retriever.get_relevant_documents(query)
+            return summarize_chain.run(documents)
+        else:
+            documents = retriever.get_relevant_documents(query)
+            return summarize_chain.run(question=query, input_documents=documents)
 
     return Tool(
-        name=name, description=description, func=retriever.get_relevant_documents
+        name=name, description=description, func=retrieve_and_combine_documents
     )
 
 
-def create_agent(database):
+def create_agent(vectordb):
     """
     This function creates an agent for retrieving and generating responses.
 
     Parameters:
-    database (FAISS): The built index from the text.
+    vectordb (FAISS): The built index from the text.
 
     Returns:
-    a_executor (AgentExecutor): The created agent executor.
+    agent_executor (AgentExecutor): The created agent executor.
     """
 
     print("Creating agent...")
-    retriever = database.as_retriever(search_kwargs={'k': num_docs})
+    retriever = vectordb.as_retriever(search_kwargs={'k': num_docs})
     llm = ChatOpenAI(
-        model=model,
+        model=MODEL,
         temperature=0,
         openai_api_key=openai_api_key,
         streaming=True
@@ -158,26 +203,26 @@ def create_agent(database):
         content="Yor are a helpful Assistant that is here to help the user find information \
             about the game. Answer the question with the tone and style of Astaarion from \
             Baldur's Gate 3. Always make sure to provide accurate information by searching the \
-            Baldur's Gate 3 Wiki whenever the user asks a question about the game. Make sure to \
-            perform multiple searches using slightly different queries to make sure you find the \
-            most relevant information."
+            Baldur's Gate 3 Wiki whenever the user asks a question about the game. \
+            If the context is not enough to answer the question, ask the user for more \
+            information and use the information to search the Baldur's Gate 3 Wiki again."
     )
-    a_executor = create_conversational_retrieval_agent(
+    agent_executor = create_conversational_retrieval_agent(
         llm,
         tools,
         system_message=system_message,
         remember_intermediate_steps=False
     )
-    a_executor.memory = memory
-    return a_executor
+    agent_executor.memory = memory
+    return agent_executor
 
 
-def generate_response(a_executor, input_query):
+def generate_response(agent_executor, input_query):
     """
     This function generates a response to a given input query using the agent executor.
 
     Parameters:
-    a_executor (AgentExecutor): The agent executor used to generate the response.
+    agent_executor (AgentExecutor): The agent executor used to generate the response.
     input_query (str): The input query to generate a response for.
 
     Returns:
@@ -187,7 +232,7 @@ def generate_response(a_executor, input_query):
     print("Generating response...")
     try:
         # generate response
-        response = a_executor(
+        response = agent_executor(
             input_query,
             callbacks=[st_callback]
         )['output']
@@ -206,9 +251,9 @@ def generate_response(a_executor, input_query):
 
         # Custom warning message
         context_size = str(
-            4097 if model == "gpt-3.5-turbo-0613"
-            else 8191 if model == "gpt-4-0613"
-            else 16384 if model == "gpt-3.5-turbo-16k"
+            4097 if MODEL == "gpt-3.5-turbo-0613"
+            else 8191 if MODEL == "gpt-4-0613"
+            else 16384 if MODEL == "gpt-3.5-turbo-16k"
             else "an unknown (but too small) number of"
         )
         warning_message = f"Your input resulted in too many tokens for the model to handle. \
@@ -223,18 +268,27 @@ def generate_response(a_executor, input_query):
 # Input Widgets
 st.sidebar.header("Chatbot Settings")
 openai_api_key = st.sidebar.text_input('OpenAI API Key', type='password')
-chain_type = st.sidebar.selectbox(
-    'Chain Type', ['stuff', 'refine'], disabled=not openai_api_key.startswith('sk-'))
-st.sidebar.info(
-    'stuff ⇒ faster, less accurate  \nrefine ⇒ slower, more accurate')
-model = st.sidebar.selectbox('Model', ['gpt-3.5-turbo-0613', 'gpt-3.5-turbo-16k',
+CHAIN_TYPE = st.sidebar.selectbox(
+    'Summarize Chain Type (see Info below)',
+    ['stuff', 'map-reduce', 'refine'],
+    disabled=not openai_api_key.startswith('sk-')
+)
+MODEL = st.sidebar.selectbox('Model', ['gpt-3.5-turbo-0613', 'gpt-3.5-turbo-16k',
                              'gpt-4-0613'], disabled=not openai_api_key.startswith('sk-'))
 num_docs = st.sidebar.slider(
     'Number of documents retrieved per wiki search', 1, 50, 10)
+if st.sidebar.button('Clear Message History'):
+    msgs.clear()
+st.sidebar.info(
+    'Summarize Chain Type:  \n\n"stuff" ⇒ faster, limited docs  \n"map-reduce" ⇒ slower, unlimited \
+    docs  \n"refine" ⇒ sometimes more accurate for complex questions, slower, unlimited docs'
+)
 
 # App Logic
 if not openai_api_key.startswith('sk-'):
-    st.warning('Please enter your OpenAI API key!', icon='⚠')
+    st.warning("""Please enter your OpenAI API key!
+               If you don't have an API key yet, you can get one at 
+               [openai.com](https://platform.openai.com/account/api-keys).""", icon='⚠')
 if openai_api_key.startswith('sk-'):
     placeholder = st.empty()
 
@@ -242,24 +296,24 @@ if openai_api_key.startswith('sk-'):
     if os.path.exists(f'scraped_text_{indexname}.txt'):
         print("text file exists, loading...")
         with open(f"scraped_text_{indexname}.txt", 'r', encoding='utf-8') as f:
-            scraped_text = f.read()
+            SCRAPED_TEXT = f.read()
     else:
         print("text file doesn't exist, scraping...")
         placeholder.info('Scraping data...')
-        scraped_text = scrape_url(URL)
+        SCRAPED_TEXT = scrape_url(URL)
         placeholder.empty()
 
     # check if the index exists
     if os.path.isdir(indexname):
         embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
-        vectordb = FAISS.load_local(indexname, embeddings)
+        VECTORDB = FAISS.load_local(indexname, embeddings)
     else:
         # if the directory doesn't exist, rebuild the index
         placeholder.info('Building index...')
-        vectordb = build_index(scraped_text)
+        VECTORDB = build_index(SCRAPED_TEXT)
         placeholder.empty()
 
-    agent_executor = create_agent(vectordb)
+    AGENT_EXECUTOR = create_agent(VECTORDB)
     for msg in msgs.messages:
         st.chat_message(msg.type).write(msg.content)
 
@@ -267,5 +321,7 @@ if openai_api_key.startswith('sk-'):
         st.chat_message("human").write(query_text)
         with st.chat_message("assistant"):
             st_callback = StreamlitCallbackHandler(st.container())
-            generated_response = generate_response(agent_executor, query_text)
-            st.write(generated_response)
+            RESPONSE = generate_response(AGENT_EXECUTOR, query_text)
+            st.write(RESPONSE)
+
+
