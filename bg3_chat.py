@@ -60,8 +60,8 @@ if len(msgs.messages) == 0:
     msgs.add_ai_message("How can I help you?")
 
 # Page title
-st.set_page_config(page_title="🔮🧛‍♂️ BG3Chat")
-st.sidebar.title("🔮🧛‍♂️ BG3Chat")
+st.set_page_config(page_title="🏰🔮 BG3Chat")
+st.sidebar.title("🏰🔮 BG3Chat")
 
 
 def scrape_url(link):

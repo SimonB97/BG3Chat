@@ -1,16 +1,24 @@
-# Baldur's Gate 3 Wiki Chatbot
+<p align="center">
+    <h1>🏰🔮 BG3Chat - Baldur's Gate 3-Wiki Chatbot</h1>
+</p>
 
-Welcome to the Baldur's Gate 3 Wiki Chatbot repository! This educational project is a labor of love, designed to help fans of the game find the information they need quickly and easily. It's a simple tool, but one that I hope you'll find useful.
+Welcome to the BG3Chat repository! This educational project is a labor of love, designed to help fans of the game find the information they need quickly and easily. It's a simple tool, but one that I hope you'll find useful.
 
 https://github.com/SimonB97/BG3Chat/assets/102378134/5940ad30-72ed-47e3-9a3a-3f9ea1eb0697
 
-## Overview
+## 🤔 What is this?
 
-This chatbot uses a combination of web scraping, natural language processing, and machine learning to provide answers to user queries about the game Baldur's Gate 3. It scrapes the Baldur's Gate 3 Wiki from [bg3.wiki](https://bg3.wiki/), builds an index of the content, and generates responses to user queries based on this indexed content. 
+BG3Chat is a chatbot that uses a combination of web scraping and data augmented generation to provide answers to questions about the game Baldur's Gate 3. It scrapes content about Baldur's Gate 3 from [bg3.wiki](https://bg3.wiki/), builds an index, and generates responses to user queries based on this indexed content. 
 
 The chatbot is designed to be used with the Streamlit library for a user-friendly interface. It also uses Langchain and the OpenAI API for generating responses and the BeautifulSoup library for web scraping.
 
-## Installation
+## 🚀 Quick Start
+
+For a quick and easy way to try out BG3Chat, you can visit the deployed version of the app at [https://bg3chat.streamlit.app/](https://bg3chat.streamlit.app/). 
+
+If you want to run the app locally, please follow the installation and usage instructions below.
+
+## 🔧 Installation
 
 To get started, you'll need to clone this repository to your local machine. From there, you can install the necessary dependencies using pip:
 
@@ -20,39 +28,48 @@ pip install -r requirements.txt
 
 You'll also need to provide your OpenAI API key, which you can get from the [OpenAI website](https://platform.openai.com/account/api-keys).
 
-## Usage
+## 💬 Usage
 
-Once you've installed the necessary dependencies and provided your OpenAI API key, you can start the chatbot by running the `BG3Chat.py` script:
+Once you've installed the necessary dependencies you can start the chatbot by running the `bg3_chat.py` script:
 
 ```bash
-python BG3Chat.py
+streamlit run BG3Chat.py
 ```
 
 This will start the Streamlit server and open the chatbot in your web browser.
 
-## Using the Chatbot Settings
+## 📝 Updating the Indexed Wiki Content
 
-On the left side of the chatbot interface, you'll find a sidebar labeled "Chatbot Settings". Here, you can customize your chatbot experience. 
+If you want to update the indexed wiki content, you can simply remove the `scraped_text_https___bg3_wiki_.txt` file and the `https___bg3_wiki_` folder. The chatbot will automatically re-scrape the wiki and re-index the content the next time you run it. Keep in mind that this queries the OpenAI API, so you may incur additional costs if you do this frequently. 💸
+
+## 🛠️ Customizing the Chatbot
+
+On the left side of the chatbot interface, you'll find a sidebar where you can customize your chatbot experience. 
 
 - **OpenAI API Key**: Enter your OpenAI API key here. This is necessary for the chatbot to function.
-- **Summarize Chain Type**: Choose the method the chatbot uses to summarize the information it retrieves from the indexed wiki. Options include "stuff" (faster, limited documents), "map-reduce" (slower, unlimited documents), and "refine" (potentially more accurate for complex questions, slower, unlimited documents).
-- **Model**: Select the model the chatbot uses to generate responses. Options include 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-16k', and 'gpt-4-0613'.
-- **Number of documents retrieved per wiki search**: Use the slider to adjust the number of documents the chatbot retrieves for each search. More documents can provide more comprehensive answers, but may also slow down response time and lead to higher costs for OpenAI API usage.
+- **Summarize Chain Type**: This option allows you to pick how the chatbot processes and presents the information it finds:
+  - **Stuff**: Quick mode with answers based on a limited number of sources.
+  - **Map-reduce**: A more thorough mode that takes a bit longer but can summarize any number of sources.
+  - **Refine**: Ideal for detailed questions, it takes longer but ensures accuracy by examining any number of sources in-depth.
+
+- **Model**: Select the OpenAI model the chatbot uses to generate responses. Options include 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-16k', and 'gpt-4-0613'.
+- **Number of documents retrieved per wiki search**: Use the slider to adjust the number of documents the AI Agent retrieves for each index search. More documents can provide more comprehensive answers, but may also slow down response time and lead to higher costs for OpenAI API usage.
 
 Remember to click 'Clear Message History' if you want to start a new conversation.
 
-## Contributing
+## 👥 Contributing
+
 
 I'm always open to contributions and would be thrilled to have you join in on this project. Whether you're fixing bugs, improving documentation, or proposing new features, your efforts are greatly appreciated.
 
-## Acknowledgements
+## 🙏 Acknowledgements
 
 I'd like to express my gratitude to the team behind the Baldur's Gate 3 Wiki. Their dedication to compiling and organizing a vast amount of information about the game has made this project possible. The chatbot relies heavily on the content provided by the BG3 Wiki, and I am deeply appreciative of their efforts.
 
-## License
+## 🔑 License
 
 This project is licensed under the Attribution-NonCommercial-ShareAlike 4.0 International ([CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)) license. You are free to share, copy, redistribute, remix, transform, and build upon the material, as long as you follow the license terms.
 
-## Final Thoughts
+## 💭 Final Thoughts
 
 This project is a humble attempt to make the vast world of Baldur's Gate 3 a little more accessible. It's not perfect, and there's always room for improvement. But I hope it can help you in your journey through the game. Enjoy!
