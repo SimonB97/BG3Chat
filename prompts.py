@@ -4,7 +4,7 @@
 # Map Reduce Summarize Prompt
 MAPREDUCE_PROMPT_TEMPLATE = """Question: {question}
 
-Context: {context}
+Context: {text}
 
 Based on the context, answer the question in a concise summary.
 CONCISE SUMMARY:"""

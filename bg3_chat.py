@@ -17,6 +17,7 @@ The chatbot's functionality includes:
 
 import os
 import re
+import requests
 import streamlit as st
 from langchain.callbacks import StreamlitCallbackHandler
 from langchain.vectorstores import FAISS
@@ -73,11 +74,12 @@ def scrape_url(link):
     """
 
     print(f"Scraping {link}...")
-    # extractor = UnstructuredXMLLoader()
+    response = requests.get(link, timeout=10)
+    content_type = response.headers['content-type']
+    parser = "xml" if "xml" in content_type else "html.parser"
     loader = RecursiveUrlLoader(
         url=link,
-        extractor=lambda x: Soup(x, "html.parser").text,
-        # extractor=extractor,
+        extractor=lambda x: Soup(x, parser).text,
         prevent_outside=True,
         max_depth=1
     )
@@ -107,7 +109,7 @@ def build_index(scraped_text: str):
     print("Building index...")
     # split text into chunks
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1200, chunk_overlap=120)
+        chunk_size=1500, chunk_overlap=150)
     splits = text_splitter.split_text(scraped_text)
     # build index
     index_embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
