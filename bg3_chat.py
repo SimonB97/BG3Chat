@@ -323,7 +323,7 @@ CHAIN_TYPE = st.sidebar.selectbox(
 MODEL = st.sidebar.selectbox('Model', ['gpt-3.5-turbo-0613', 'gpt-3.5-turbo-16k',
                              'gpt-4-0613'], disabled=not OPENAI_API_KEY.startswith('sk-'))
 num_docs = st.sidebar.slider(
-    'Number of documents retrieved per wiki search', 1, 50, 10)
+    'Number of documents retrieved per wiki search', 1, 30, 8)
 if st.sidebar.button('Clear Message History'):
     msgs.clear()
 st.sidebar.info(
