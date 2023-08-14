@@ -38,6 +38,7 @@ from langsmith import Client
 from openai.error import InvalidRequestError
 from bs4 import BeautifulSoup as Soup
 from dotenv import load_dotenv
+import matplotlib.pyplot as plt
 import prompts
 
 load_dotenv()
@@ -46,7 +47,7 @@ load_dotenv()
 client = Client()
 
 # URL to scrape
-URL = 'https://bg3.wiki/'  # 'https://baldursgate3.wiki.fextralife.com/'
+URL = 'https://bg3.wiki/'
 # turn url into indexname (remove special characters)
 indexname = re.sub('[^a-zA-Z0-9]', '_', URL)
 
@@ -88,6 +89,8 @@ def scrape_url(link):
     text = " ".join(combined_docs)
     # Clean text
     cleaned_text = re.sub('\n{3,}', '\n\n', text)
+    # Remove non-ASCII characters
+    cleaned_text = re.sub(r'[^\x00-\x7F]+', '', cleaned_text)
     # save text to file
     with open(f"scraped_text_{indexname}.txt", 'w', encoding='utf-8') as file:
         file.write(cleaned_text)
@@ -108,8 +111,9 @@ def build_index(scraped_text: str):
     print("Building index...")
     # split text into chunks
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1500, chunk_overlap=150)
+        chunk_size=1200, chunk_overlap=120)
     splits = text_splitter.split_text(scraped_text)
+
     # build index
     index_embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
     database = FAISS.from_texts(splits, index_embeddings)
@@ -210,7 +214,10 @@ def create_agent(vectordb):
             Always make sure to provide accurate information by searching the \
             Baldur's Gate 3 Wiki whenever the user asks a question about the game. \
             If the context is not enough to answer the question, ask the user for more \
-            information and use the information to search the Baldur's Gate 3 Wiki again."""
+            information and use the information to search the Baldur's Gate 3 Wiki again. Remember \
+            to ALWAYS use the search tool before answering questions about the game. Never \
+            answer questions about the game without using the search tool, except when the \
+            necessary information is already in the messages."""
     )
     agent_executor = create_conversational_retrieval_agent(
         llm,
