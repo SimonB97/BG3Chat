@@ -60,8 +60,8 @@ if len(msgs.messages) == 0:
     msgs.add_ai_message("How can I help you?")
 
 # Page title
-st.set_page_config(page_title="🦜🔗 Baldur's Gate 3-Wiki Chatbot")
-st.sidebar.title("🦜🔗 Baldur's Gate 3-Wiki Chatbot")
+st.set_page_config(page_title="🔮🧛‍♂️ BG3Chat")
+st.sidebar.title("🔮🧛‍♂️ BG3Chat")
 
 
 def scrape_url(link):
@@ -330,6 +330,13 @@ if st.sidebar.button('Clear Message History'):
 st.sidebar.info(
     'Summarize Chain Type:  \n\n"stuff" ➝ faster, limited docs  \n"map-reduce" ➝ slower, unlimited \
     docs  \n"refine" ➝ often more accurate for complex questions, slowest, unlimited docs'
+)
+st.sidebar.markdown(
+    "**Disclaimer:** BG3Chat is unofficial Fan Content permitted under the Fan Content Policy. Not \
+    approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the \
+    Coast. ©Wizards of the Coast LLC. \
+    \n\n\
+    It is also not commisioned or sponsored by Larian Studios."
 )
 
 # App Logic
