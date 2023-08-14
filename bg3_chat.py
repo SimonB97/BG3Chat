@@ -38,13 +38,13 @@ from langsmith import Client
 from openai.error import InvalidRequestError
 from bs4 import BeautifulSoup as Soup
 from dotenv import load_dotenv
-import matplotlib.pyplot as plt
 import prompts
 
-load_dotenv()
-
 # Langsmith (only for tracing)
-client = Client()
+ENABLE_TRACING = "False"
+if ENABLE_TRACING == "True":
+    load_dotenv()
+    client = Client()
 
 # URL to scrape
 URL = 'https://bg3.wiki/'
