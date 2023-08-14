@@ -33,9 +33,11 @@ from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
 from langchain.prompts import PromptTemplate
 from langchain.chains.summarize import (
-    _load_stuff_chain, _load_map_reduce_chain, _load_refine_chain)
+    _load_stuff_chain, _load_map_reduce_chain, _load_refine_chain
+)
+from langchain.chains import create_tagging_chain
 from langsmith import Client
-from openai.error import InvalidRequestError
+from openai import InvalidRequestError
 from bs4 import BeautifulSoup as Soup
 from dotenv import load_dotenv
 import prompts
@@ -115,7 +117,7 @@ def build_index(scraped_text: str):
     splits = text_splitter.split_text(scraped_text)
 
     # build index
-    index_embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
+    index_embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
     database = FAISS.from_texts(splits, index_embeddings)
     database.save_local(indexname)
     return database
@@ -190,12 +192,13 @@ def create_agent(vectordb):
     llm = ChatOpenAI(
         model=MODEL,
         temperature=0,
-        openai_api_key=openai_api_key,
+        openai_api_key=OPENAI_API_KEY,
         streaming=True
     )
     tool_description = "Searches and returns documents regarding the Baldur's Gate 3 Wiki. \
         USE ALWAYS when you need information about the game, to make sure \
-        your answers are accurate and based on sources."
+        your answers are accurate. \
+        Enter a shortened, concise question about the game."
     tool = create_retriever_tool(
         llm,
         retriever,
@@ -205,7 +208,8 @@ def create_agent(vectordb):
     tools = [tool]
     system_message = SystemMessage(
         content="""Yor are a helpful Assistant that is here to help the user find information
-        about the game by searching the bg3 wiki. Always answer the question in the tone and style of Astaarion from
+        about the Baldur's Gate 3 by searching the bg3 wiki database. Before answering, search the wiki
+        if the question is related to the game. Answer all questions in the tone and style of Astaarion from
         Baldur's Gate 3 after searching the wiki. Astarion's talking style and tone can be described as
         deceptive, sarcastic, and self-interested, with a hint of his dark past.
         ALWAYS MAKE SURE to provide ACCURATE INFORMATION by SEARCHING the
@@ -278,32 +282,61 @@ def generate_response(agent_executor, input_query):
         st.warning(warning_message)
         return None
 
+def is_related_to_bg3(query):
+    """
+    This function determines if a given query is related to Baldur's Gate 3.
+
+    Parameters:
+    query (str): The query to be checked.
+
+    Returns:
+    bool: True if the query is related to Baldur's Gate 3, False otherwise.
+    """
+
+    schema = {
+        "properties": {
+            "bg3_related": {
+                "type": "boolean",
+                "enum": [True, False],
+                "description": "describes if the question is related to or \
+                                could be related to Baldur's Gate 3"
+            },
+        },
+        "required": ["bg3_related"],
+    }
+    llm = ChatOpenAI(
+        model="gpt-3.5-turbo-0613",
+        temperature=0,
+        openai_api_key=OPENAI_API_KEY,
+    )
+    chain = create_tagging_chain(schema, llm)
+    return chain.run(query)['bg3_related']
+
 
 # Input Widgets
-st.sidebar.header("Chatbot Settings")
-openai_api_key = st.sidebar.text_input('OpenAI API Key', type='password')
+OPENAI_API_KEY = st.sidebar.text_input('OpenAI API Key', type='password')
 CHAIN_TYPE = st.sidebar.selectbox(
     'Summarize Chain Type (see Info below)',
     ['stuff', 'map-reduce', 'refine'],
-    disabled=not openai_api_key.startswith('sk-')
+    disabled=not OPENAI_API_KEY.startswith('sk-')
 )
 MODEL = st.sidebar.selectbox('Model', ['gpt-3.5-turbo-0613', 'gpt-3.5-turbo-16k',
-                             'gpt-4-0613'], disabled=not openai_api_key.startswith('sk-'))
+                             'gpt-4-0613'], disabled=not OPENAI_API_KEY.startswith('sk-'))
 num_docs = st.sidebar.slider(
     'Number of documents retrieved per wiki search', 1, 50, 10)
 if st.sidebar.button('Clear Message History'):
     msgs.clear()
 st.sidebar.info(
-    'Summarize Chain Type:  \n\n"stuff" ⇒ faster, limited docs  \n"map-reduce" ⇒ slower, unlimited \
-    docs  \n"refine" ⇒ sometimes more accurate for complex questions, slower, unlimited docs'
+    'Summarize Chain Type:  \n\n"stuff" ➝ faster, limited docs  \n"map-reduce" ➝ slower, unlimited \
+    docs  \n"refine" ➝ often more accurate for complex questions, slowest, unlimited docs'
 )
 
 # App Logic
-if not openai_api_key.startswith('sk-'):
+if not OPENAI_API_KEY.startswith('sk-'):
     st.warning("""Please enter your OpenAI API key!
                If you don't have an API key yet, you can get one at 
                [openai.com](https://platform.openai.com/account/api-keys).""", icon='⚠')
-if openai_api_key.startswith('sk-'):
+if OPENAI_API_KEY.startswith('sk-'):
     placeholder = st.empty()
 
     # check if the scraped text file exists
@@ -319,7 +352,7 @@ if openai_api_key.startswith('sk-'):
 
     # check if the index exists
     if os.path.isdir(indexname):
-        embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
+        embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
         VECTORDB = FAISS.load_local(indexname, embeddings)
     else:
         # if the directory doesn't exist, rebuild the index
@@ -335,5 +368,12 @@ if openai_api_key.startswith('sk-'):
         st.chat_message("human").write(query_text)
         with st.chat_message("assistant"):
             st_callback = StreamlitCallbackHandler(st.container())
-            RESPONSE = generate_response(AGENT_EXECUTOR, query_text)
+            # help remembering to use the search tool if the query is related to BG3
+            related_to_bg3 = is_related_to_bg3(query_text)
+            print(f"\nRelated to BG3: {related_to_bg3}\n")
+            if not is_related_to_bg3(query_text):
+                RESPONSE = generate_response(AGENT_EXECUTOR, query_text)
+            else:
+                extended_query = query_text + " Search the wiki for this!"
+                RESPONSE = generate_response(AGENT_EXECUTOR, extended_query)
             st.write(RESPONSE)
