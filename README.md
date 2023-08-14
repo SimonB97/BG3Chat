@@ -14,9 +14,11 @@ The chatbot is designed to be used with the Streamlit library for a user-friendl
 
 ## 🚀 Quick Start
 
-For a quick and easy way to try out BG3Chat, you can visit the deployed version of the app at [https://bg3chat.streamlit.app/](https://bg3chat.streamlit.app/). 
+Quick and easy access at:
 
-If you want to run the app locally, please follow the installation and usage instructions below.
+☛ [bg3chat.streamlit.app](https://bg3chat.streamlit.app/) ☚
+
+If you want to run the app locally to make changes or update the index, please follow the installation and usage instructions below.
 
 ## 🔧 Installation
 
