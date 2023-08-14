@@ -332,11 +332,16 @@ st.sidebar.info(
     docs  \n"refine" ➝ often more accurate for complex questions, slowest, unlimited docs'
 )
 st.sidebar.markdown(
-    "**Disclaimer:** BG3Chat is unofficial Fan Content permitted under the Fan Content Policy. Not \
-    approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the \
-    Coast. ©Wizards of the Coast LLC. \
-    \n\n\
-    It is also not commisioned or sponsored by Larian Studios."
+"""<style>small {font-size: 0.9em; line-height: 0.5;}</style>
+<small>
+<b>Disclaimer</b>:  <br>
+<i>
+BG3Chat is unofficial Fan Content permitted under the Fan Content Policy. 
+Not approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the
+Coast. ©Wizards of the Coast LLC. <br>
+It is also not commisioned or sponsored by Larian Studios.
+</i>
+</small>""", unsafe_allow_html=True
 )
 
 # App Logic
