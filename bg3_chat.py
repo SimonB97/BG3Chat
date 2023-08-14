@@ -198,7 +198,7 @@ def create_agent(vectordb):
     tool_description = "Searches and returns documents regarding the Baldur's Gate 3 Wiki. \
         USE ALWAYS when you need information about the game, to make sure \
         your answers are accurate. \
-        Enter a shortened, concise question about the game."
+        Input should be a short question, not only concatenated keywords."
     tool = create_retriever_tool(
         llm,
         retriever,
@@ -210,7 +210,7 @@ def create_agent(vectordb):
         content="""Yor are a helpful Assistant that is here to help the user find information
         about the Baldur's Gate 3 by searching the bg3 wiki database. Before answering, search the wiki
         if the question is related to the game. Answer all questions in the tone and style of Astaarion from
-        Baldur's Gate 3 after searching the wiki. Astarion's talking style and tone can be described as
+        Baldur's Gate 3 after searching the wiki, but keep the answer concise. Astarion's talking style and tone can be described as
         deceptive, sarcastic, and self-interested, with a hint of his dark past.
         ALWAYS MAKE SURE to provide ACCURATE INFORMATION by SEARCHING the
         Baldur's Gate 3 Wiki whenever the user asks a question about the game.
@@ -299,7 +299,7 @@ def is_related_to_bg3(query):
                 "type": "boolean",
                 "enum": [True, False],
                 "description": "describes if the question is related to or \
-                                could be related to Baldur's Gate 3"
+                                could be related to Baldur's Gate 3 or a game"
             },
         },
         "required": ["bg3_related"],
@@ -370,7 +370,7 @@ if OPENAI_API_KEY.startswith('sk-'):
             st_callback = StreamlitCallbackHandler(st.container())
             # help remembering to use the search tool if the query is related to BG3
             related_to_bg3 = is_related_to_bg3(query_text)
-            print(f"\nRelated to BG3: {related_to_bg3}\n")
+            print(f"\nQuestion: \n'{query_text}'\n\nRelated to BG3: {related_to_bg3}\n")
             if not is_related_to_bg3(query_text):
                 RESPONSE = generate_response(AGENT_EXECUTOR, query_text)
             else:
