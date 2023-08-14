@@ -166,9 +166,8 @@ def create_retriever_tool(
         if CHAIN_TYPE == "stuff":
             documents = retriever.get_relevant_documents(query)
             return summarize_chain.run(documents)
-        else:
-            documents = retriever.get_relevant_documents(query)
-            return summarize_chain.run(question=query, input_documents=documents)
+        documents = retriever.get_relevant_documents(query)
+        return summarize_chain.run(question=query, input_documents=documents)
 
     return Tool(
         name=name, description=description, func=retrieve_and_combine_documents
