@@ -21,7 +21,7 @@ import requests
 import streamlit as st
 from langchain.callbacks import StreamlitCallbackHandler
 from langchain.vectorstores import FAISS
-from langchain.document_loaders import RecursiveUrlLoader, UnstructuredXMLLoader
+from langchain.document_loaders import RecursiveUrlLoader
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chat_models import ChatOpenAI
@@ -37,13 +37,12 @@ from langchain.chains.summarize import (
 from langsmith import Client
 from openai.error import InvalidRequestError
 from bs4 import BeautifulSoup as Soup
+from dotenv import load_dotenv
 import prompts
 
+load_dotenv()
+
 # Langsmith (only for tracing)
-os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_PROJECT"] = "BG3Chat Tracing"
-os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
-os.environ["LANGCHAIN_API_KEY"] = "ls__6bf8445da91340fbae4da511452a2a65"
 client = Client()
 
 # URL to scrape
@@ -206,7 +205,7 @@ def create_agent(vectordb):
     system_message = SystemMessage(
         content="""Yor are a helpful Assistant that is here to help the user find information \
             about the game. Always answer the question in the tone and style of Astaarion from \
-            Baldur's Gate 3. In essence, Astarion's talking style and tone can be described as \ 
+            Baldur's Gate 3. In essence, Astarion's talking style and tone can be described as \
             deceptive, sarcastic, and self-interested, with a hint of his dark past. \
             Always make sure to provide accurate information by searching the \
             Baldur's Gate 3 Wiki whenever the user asks a question about the game. \
@@ -329,5 +328,3 @@ if openai_api_key.startswith('sk-'):
             st_callback = StreamlitCallbackHandler(st.container())
             RESPONSE = generate_response(AGENT_EXECUTOR, query_text)
             st.write(RESPONSE)
-
-
