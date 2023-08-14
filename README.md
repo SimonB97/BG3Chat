@@ -2,6 +2,8 @@
 
 Welcome to the Baldur's Gate 3 Wiki Chatbot repository! This educational project is a labor of love, designed to help fans of the game find the information they need quickly and easily. It's a simple tool, but one that I hope you'll find useful.
 
+https://github.com/SimonB97/BG3Chat/assets/102378134/5940ad30-72ed-47e3-9a3a-3f9ea1eb0697
+
 ## Overview
 
 This chatbot uses a combination of web scraping, natural language processing, and machine learning to provide answers to user queries about the game Baldur's Gate 3. It scrapes the Baldur's Gate 3 Wiki from [bg3.wiki](https://bg3.wiki/), builds an index of the content, and generates responses to user queries based on this indexed content. 
