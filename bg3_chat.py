@@ -20,7 +20,7 @@ import re
 import streamlit as st
 from langchain.callbacks import StreamlitCallbackHandler
 from langchain.vectorstores import FAISS
-from langchain.document_loaders.recursive_url_loader import RecursiveUrlLoader
+from langchain.document_loaders import RecursiveUrlLoader, UnstructuredXMLLoader
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chat_models import ChatOpenAI
@@ -46,7 +46,7 @@ os.environ["LANGCHAIN_API_KEY"] = "ls__6bf8445da91340fbae4da511452a2a65"
 client = Client()
 
 # URL to scrape
-URL = 'https://baldursgate3.wiki.fextralife.com/'
+URL = 'https://bg3.wiki/'  # 'https://baldursgate3.wiki.fextralife.com/'
 # turn url into indexname (remove special characters)
 indexname = re.sub('[^a-zA-Z0-9]', '_', URL)
 
@@ -73,9 +73,11 @@ def scrape_url(link):
     """
 
     print(f"Scraping {link}...")
+    # extractor = UnstructuredXMLLoader()
     loader = RecursiveUrlLoader(
         url=link,
         extractor=lambda x: Soup(x, "html.parser").text,
+        # extractor=extractor,
         prevent_outside=True,
         max_depth=1
     )
@@ -132,14 +134,14 @@ def create_retriever_tool(
     if CHAIN_TYPE == "stuff":
         summarize_chain = _load_stuff_chain(llm, verbose=True)
     elif CHAIN_TYPE == "map-reduce":
-        # map_prompt_template = prompts.MAPREDUCE_PROMPT_TEMPLATE
-        # map_prompt = PromptTemplate.from_template(
-        #     template=map_prompt_template
-        # )
+        map_prompt_template = prompts.MAPREDUCE_PROMPT_TEMPLATE
+        map_prompt = PromptTemplate.from_template(
+            template=map_prompt_template
+        )
         summarize_chain = _load_map_reduce_chain(
             llm,
-            # map_prompt=map_prompt,
-            # combine_prompt=map_prompt,
+            map_prompt=map_prompt,
+            combine_prompt=map_prompt,
             verbose=True
         )
     elif CHAIN_TYPE == "refine":
@@ -189,7 +191,7 @@ def create_agent(vectordb):
     )
     tool_description = "Searches and returns documents regarding the Baldur's Gate 3 Wiki \
         by using similarity search on embeddings of query and documents, \
-        so put in query that represents shortened optimal docs for answering. \
+        so make sure to put in shortened questions. \
         Use whenever you need to find information about the game, to make sure \
         your answers are accurate."
     tool = create_retriever_tool(
@@ -200,12 +202,14 @@ def create_agent(vectordb):
     )
     tools = [tool]
     system_message = SystemMessage(
-        content="Yor are a helpful Assistant that is here to help the user find information \
-            about the game. Answer the question with the tone and style of Astaarion from \
-            Baldur's Gate 3. Always make sure to provide accurate information by searching the \
+        content="""Yor are a helpful Assistant that is here to help the user find information \
+            about the game. Always answer the question in the tone and style of Astaarion from \
+            Baldur's Gate 3. In essence, Astarion's talking style and tone can be described as \ 
+            deceptive, sarcastic, and self-interested, with a hint of his dark past. \
+            Always make sure to provide accurate information by searching the \
             Baldur's Gate 3 Wiki whenever the user asks a question about the game. \
             If the context is not enough to answer the question, ask the user for more \
-            information and use the information to search the Baldur's Gate 3 Wiki again."
+            information and use the information to search the Baldur's Gate 3 Wiki again."""
     )
     agent_executor = create_conversational_retrieval_agent(
         llm,
