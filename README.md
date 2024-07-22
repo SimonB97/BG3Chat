@@ -8,7 +8,7 @@ https://github.com/SimonB97/BG3Chat/assets/102378134/5940ad30-72ed-47e3-9a3a-3f9
 
 ## 🤔 What is this?
 
-BG3Chat is a chatbot that uses a combination of web scraping and data augmented generation to provide answers to questions about the game Baldur's Gate 3. It scrapes content about Baldur's Gate 3 from [bg3.wiki](https://bg3.wiki/), builds an index, and generates responses to user queries based on this indexed content. 
+BG3Chat is a chatbot that uses a combination of web scraping and retrival augmented generation (RAG) to provide answers to questions about the game Baldur's Gate 3. It scrapes content about Baldur's Gate 3 from [bg3.wiki](https://bg3.wiki/), builds an index, and generates responses to user queries based on this indexed content. 
 
 The chatbot is designed to be used with the Streamlit library for a user-friendly interface. It also uses Langchain and the OpenAI API for generating responses and the BeautifulSoup library for web scraping.
 
