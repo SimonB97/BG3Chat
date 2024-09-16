@@ -61,8 +61,7 @@ Remember to click 'Clear Message History' if you want to start a new conversatio
 
 ## 👥 Contributing
 
-
-I'm always open to contributions and would be thrilled to have you join in on this project. Whether you're fixing bugs, improving documentation, or proposing new features, your efforts are greatly appreciated.
+Contributions are always welcome!
 
 ## 🙏 Acknowledgements
 
