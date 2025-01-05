@@ -2,15 +2,13 @@
     <h1>🏰🔮 BG3Chat - Baldur's Gate 3-Wiki Chatbot</h1>
 </p>
 
-Welcome to the BG3Chat repository! This educational project is a labor of love, designed to help fans of the game find the information they need quickly and easily. It's a simple tool, but one that I hope you'll find useful.
+Welcome to BG3Chat! This educational project is designed to help fans of the game find the information they need quickly and easily. It's a simple tool, but one that I hope you'll find useful.
 
 https://github.com/SimonB97/BG3Chat/assets/102378134/5940ad30-72ed-47e3-9a3a-3f9ea1eb0697
 
 ## 🤔 What is this?
 
 BG3Chat is a chatbot that uses a combination of web scraping and retrival augmented generation (RAG) to provide answers to questions about the game Baldur's Gate 3. It scrapes content about Baldur's Gate 3 from [bg3.wiki](https://bg3.wiki/), builds an index, and generates responses to user queries based on this indexed content. 
-
-The chatbot is designed to be used with the Streamlit library for a user-friendly interface. It also uses Langchain and the OpenAI API for generating responses and the BeautifulSoup library for web scraping.
 
 ## 🚀 Quick Start
 
